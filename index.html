@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Customer Management System (CRM)</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="app-container">
+        
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-cube brand-icon"></i>
+                <span class="brand-text">NexusCRM</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" onclick="switchSection('dashboard')">
+                    <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+                </a>
+                <a href="#customers" class="nav-item" onclick="switchSection('customers')">
+                    <i class="fa-solid fa-users"></i><span>Customers</span>
+                </a>
+                <a href="#leads" class="nav-item" onclick="switchSection('leads')">
+                    <i class="fa-solid fa-bullseye"></i><span>Leads Pipeline</span>
+                </a>
+                <a href="#interactions" class="nav-item" onclick="switchSection('interactions')">
+                    <i class="fa-solid fa-headset"></i><span>Activity Log</span>
+                </a>
+                <a href="#reports" class="nav-item" onclick="switchSection('reports')">
+                    <i class="fa-solid fa-file-lines"></i><span>Reports & Export</span>
+                </a>
+                <a href="#users" class="nav-item" onclick="switchSection('users')">
+                    <i class="fa-solid fa-user-shield"></i><span>User Management</span>
+                </a>
+                <a href="#settings" class="nav-item" onclick="switchSection('settings')">
+                    <i class="fa-solid fa-gear"></i><span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="session-timer">
+                    <i class="fa-regular fa-clock"></i> Active Session
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-content">
+            <!-- TOP NAVBAR -->
+            <header class="topbar">
+                <button id="sidebar-toggle" class="sidebar-toggle-btn" onclick="toggleSidebar()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="topbar-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="global-search" placeholder="Global search customers, leads, companies..." oninput="handleGlobalSearch(this.value)">
+                </div>
+                <div class="topbar-profile">
+                    <div class="profile-dropdown-toggle" onclick="toggleProfileMenu()">
+                        <div class="avatar-badge" id="current-user-avatar">AD</div>
+                        <span id="current-user-name">Admin User</span>
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </div>
+                    <div id="profile-menu" class="profile-menu dropdown-content">
+                        <a href="#settings" onclick="switchSection('settings')"><i class="fa-solid fa-user-gear"></i> Profile Settings</a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- DYNAMIC CONTENT SECTIONS -->
+            <main class="content-body">
+
+                <!-- 1. DASHBOARD SECTION -->
+                <section id="sec-dashboard" class="content-section active">
+                    <div class="section-header">
+                        <div>
+                            <h1>Dashboard Overview</h1>
+                            <p>Real-time analytics, pipeline status, and recent CRM activities.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="openCustomerModal()"><i class="fa-solid fa-user-plus"></i> Add Customer</button>
+                            <button class="btn btn-success" onclick="openLeadModal()"><i class="fa-solid fa-plus"></i> Add Lead</button>
+                            <button class="btn btn-secondary" onclick="openInteractionModal()"><i class="fa-solid fa-phone"></i> Record Interaction</button>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-blue"><i class="fa-solid fa-users"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-total-customers">0</h3>
+                                <p>Total Customers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-green"><i class="fa-solid fa-user-check"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-active-customers">0</h3>
+                                <p>Active Customers</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-purple"><i class="fa-solid fa-bullseye"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-total-leads">0</h3>
+                                <p>Total Leads</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-orange"><i class="fa-solid fa-handshake"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-converted-leads">0</h3>
+                                <p>Converted Leads</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-red"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-pending-followups">0</h3>
+                                <p>Pending Follow-ups</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon bg-darkred"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="stat-info">
+                                <h3 id="stat-overdue-followups">0</h3>
+                                <p>Overdue Follow-ups</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="charts-row">
+                        <div class="chart-card wide">
+                            <div class="chart-header">
+                                <h3>Customer Growth Trend</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="customerGrowthChart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Lead Status Distribution</h3>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="leadStatusChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Tables Row -->
+                    <div class="dashboard-tables-row">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Recent Customer Activities</h3>
+                                <a href="#customers" onclick="switchSection('customers')" class="view-all-link">View All</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table" id="dashboard-customer-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Company</th>
+                                            <th>Status</th>
+                                            <th>Date Added</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Recent Interactions</h3>
+                                <a href="#interactions" onclick="switchSection('interactions')" class="view-all-link">View All</a>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="data-table" id="dashboard-interaction-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Customer</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th>Outcome</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. CUSTOMERS SECTION -->
+                <section id="sec-customers" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Customer Management</h1>
+                            <p>Manage all client profiles, contact information, and business addresses.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="openCustomerModal()"><i class="fa-solid fa-user-plus"></i> Add Customer</button>
+                            <button class="btn btn-secondary" onclick="exportCustomersExcel()"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+                        </div>
+                    </div>
+
+                    <div class="card filter-card">
+                        <div class="filter-row">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="customer-search" placeholder="Search by name, email, company, city..." oninput="renderCustomersTable()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="customer-status-filter" onchange="renderCustomersTable()">
+                                    <option value="">All Statuses</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Prospect">Prospect</option>
+                                </select>
+                                <select id="customer-sort-by" onchange="renderCustomersTable()">
+                                    <option value="newest">Sort: Newest First</option>
+                                    <option value="oldest">Sort: Oldest First</option>
+                                    <option value="name">Sort: Name (A-Z)</option>
+                                    <option value="company">Sort: Company</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table" id="full-customers-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer ID</th>
+                                        <th>Full Name</th>
+                                        <th>Company</th>
+                                        <th>Email</th>
+                                        <th>Mobile</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-container" id="customer-pagination"></div>
+                    </div>
+                </section>
+
+                <!-- 3. LEADS SECTION -->
+                <section id="sec-leads" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Sales Leads Pipeline</h1>
+                            <p>Track sales prospects, estimated deal values, and convert qualified leads.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="openLeadModal()"><i class="fa-solid fa-plus"></i> Add Lead</button>
+                            <button class="btn btn-secondary" onclick="exportLeadsExcel()"><i class="fa-solid fa-file-excel"></i> Export Excel</button>
+                        </div>
+                    </div>
+
+                    <div class="card filter-card">
+                        <div class="filter-row">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="lead-search" placeholder="Search leads by name, email, company..." oninput="renderLeadsTable()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="lead-status-filter" onchange="renderLeadsTable()">
+                                    <option value="">All Lead Statuses</option>
+                                    <option value="New">New</option>
+                                    <option value="Contacted">Contacted</option>
+                                    <option value="Qualified">Qualified</option>
+                                    <option value="Proposal">Proposal</option>
+                                    <option value="Converted">Converted</option>
+                                    <option value="Lost">Lost</option>
+                                </select>
+                                <select id="lead-sort-by" onchange="renderLeadsTable()">
+                                    <option value="newest">Sort: Newest</option>
+                                    <option value="value-high">Deal Value: High to Low</option>
+                                    <option value="name">Name (A-Z)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table" id="full-leads-table">
+                                <thead>
+                                    <tr>
+                                        <th>Lead ID</th>
+                                        <th>Contact Name</th>
+                                        <th>Company</th>
+                                        <th>Source</th>
+                                        <th>Deal Value</th>
+                                        <th>Status</th>
+                                        <th>Follow-up</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. INTERACTIONS / ACTIVITY LOG SECTION -->
+                <section id="sec-interactions" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Customer Activity Log</h1>
+                            <p>Record and monitor calls, meetings, emails, and follow-up schedules.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="openInteractionModal()"><i class="fa-solid fa-phone"></i> Record Interaction</button>
+                        </div>
+                    </div>
+
+                    <div class="card filter-card">
+                        <div class="filter-row">
+                            <div class="search-box">
+                                <i class="fa-solid fa-search"></i>
+                                <input type="text" id="interaction-search" placeholder="Search interactions subject, notes..." oninput="renderInteractionsTable()">
+                            </div>
+                            <div class="filter-group">
+                                <select id="interaction-type-filter" onchange="renderInteractionsTable()">
+                                    <option value="">All Types</option>
+                                    <option value="Phone Call">Phone Call</option>
+                                    <option value="Email">Email</option>
+                                    <option value="Meeting">Meeting</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table" id="full-interactions-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Customer / Lead</th>
+                                        <th>Type</th>
+                                        <th>Date & Time</th>
+                                        <th>Subject</th>
+                                        <th>Outcome</th>
+                                        <th>Follow-up</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. REPORTS SECTION -->
+                <section id="sec-reports" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Reports & Data Operations</h1>
+                            <p>Generate analytical summaries, export PDF reports, and import/export datasets.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="generatePDFReport()"><i class="fa-solid fa-file-pdf"></i> Export PDF Report</button>
+                        </div>
+                    </div>
+
+                    <div class="reports-grid">
+                        <div class="card report-card">
+                            <h3><i class="fa-solid fa-file-excel text-success"></i> Data Import (Excel / CSV)</h3>
+                            <p>Import customer or lead datasets into the CRM. Automated validation checks formatting and duplicate emails.</p>
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label for="import-file-type">Select Dataset Type</label>
+                                <select id="import-file-type">
+                                    <option value="customers">Customers Dataset</option>
+                                    <option value="leads">Leads Dataset</option>
+                                </select>
+                            </div>
+                            <div class="file-upload-wrapper" style="margin-top: 10px;">
+                                <input type="file" id="import-file-input" accept=".xlsx, .xls, .csv" onchange="handleFileImport(event)">
+                            </div>
+                            <div id="import-feedback" class="import-feedback-box" style="margin-top: 10px;"></div>
+                        </div>
+
+                        <div class="card report-card">
+                            <h3><i class="fa-solid fa-chart-pie text-purple"></i> Sales Pipeline Summary</h3>
+                            <div class="pipeline-summary-stats" id="pipeline-summary-box">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. USER MANAGEMENT SECTION -->
+                <section id="sec-users" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>User Management & Roles</h1>
+                            <p>Demonstration user accounts, access levels, and role permissions.</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="openUserModal()"><i class="fa-solid fa-user-plus"></i> Add User</button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="data-table" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>User ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 7. SETTINGS SECTION -->
+                <section id="sec-settings" class="content-section">
+                    <div class="section-header">
+                        <div>
+                            <h1>Application Settings</h1>
+                            <p>Configure theme preferences, session parameters, and system data storage.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-grid">
+                        <div class="card">
+                            <h3>Appearance & Theme</h3>
+                            <p>Switch between light and dark mode themes across all CRM modules.</p>
+                            <div class="setting-item" style="margin-top: 20px;">
+                                <label>Dark Mode</label>
+                                <label class="switch">
+                                    <input type="checkbox" id="theme-switch" onchange="toggleDarkMode(this.checked)">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Data Management</h3>
+                            <p>Reset demonstration datasets or clear all local storage cache.</p>
+                            <div class="setting-actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn btn-warning" onclick="resetDemoData()"><i class="fa-solid fa-rotate-right"></i> Reset Demo Data</button>
+                                <button class="btn btn-danger" onclick="clearAllData()"><i class="fa-solid fa-trash"></i> Clear All Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- Customer Modal -->
+    <div id="customer-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="customer-modal-title">Add New Customer</h3>
+                <button type="button" class="modal-close" onclick="closeCustomerModal()">&times;</button>
+            </div>
+            <form id="customer-form" onsubmit="saveCustomer(event)">
+                <input type="hidden" id="cust-edit-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="cust-name" required placeholder="Aarav Sharma">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="cust-email" required placeholder="aarav@example.com" onblur="validateEmailInput(this)">
+                        <span class="error-msg" id="cust-email-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number (Indian 10-digit) *</label>
+                        <input type="text" id="cust-mobile" required placeholder="9876543210" onblur="validateMobileInput(this)">
+                        <span class="error-msg" id="cust-mobile-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="cust-company" placeholder="Acme Corp">
+                    </div>
+                    <div class="form-group">
+                        <label>Building / House No.</label>
+                        <input type="text" id="cust-bldg" placeholder="#42, Tech Park">
+                    </div>
+                    <div class="form-group">
+                        <label>Street / Locality</label>
+                        <input type="text" id="cust-street" placeholder="MG Road">
+                    </div>
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="cust-city" placeholder="Bengaluru">
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" id="cust-state" placeholder="Karnataka">
+                    </div>
+                    <div class="form-group">
+                        <label>PIN Code</label>
+                        <input type="text" id="cust-pin" placeholder="560001">
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" id="cust-country" value="India">
+                    </div>
+                    <div class="form-group">
+                        <label>Customer Status</label>
+                        <select id="cust-status">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="Prospect">Prospect</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Notes</label>
+                    <textarea id="cust-notes" rows="3" placeholder="Key client preferences..."></textarea>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Customer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lead Modal -->
+    <div id="lead-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="lead-modal-title">Add Sales Lead</h3>
+                <button type="button" class="modal-close" onclick="closeLeadModal()">&times;</button>
+            </div>
+            <form id="lead-form" onsubmit="saveLead(event)">
+                <input type="hidden" id="lead-edit-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Contact Name *</label>
+                        <input type="text" id="lead-name" required placeholder="Priya Patel">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="lead-email" required placeholder="priya@enterprise.com" onblur="validateEmailInput(this)">
+                        <span class="error-msg" id="lead-email-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Mobile Number *</label>
+                        <input type="text" id="lead-mobile" required placeholder="9876543210" onblur="validateMobileInput(this)">
+                        <span class="error-msg" id="lead-mobile-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label>Company Name</label>
+                        <input type="text" id="lead-company" placeholder="InnoTech">
+                    </div>
+                    <div class="form-group">
+                        <label>Lead Source</label>
+                        <select id="lead-source">
+                            <option value="Website">Website</option>
+                            <option value="Referral">Referral</option>
+                            <option value="Cold Outreach">Cold Outreach</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="Advertisement">Advertisement</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Estimated Deal Value ($)</label>
+                        <input type="number" id="lead-value" value="5000" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Lead Status</label>
+                        <select id="lead-status">
+                            <option value="New">New</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Qualified">Qualified</option>
+                            <option value="Proposal">Proposal</option>
+                            <option value="Converted">Converted</option>
+                            <option value="Lost">Lost</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Expected Follow-up Date</label>
+                        <input type="date" id="lead-followup">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Notes</label>
+                    <textarea id="lead-notes" rows="3" placeholder="Lead requirements..."></textarea>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeLeadModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Lead</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Interaction Modal -->
+    <div id="interaction-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Record Interaction / Activity</h3>
+                <button type="button" class="modal-close" onclick="closeInteractionModal()">&times;</button>
+            </div>
+            <form id="interaction-form" onsubmit="saveInteraction(event)">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Select Customer / Lead *</label>
+                        <select id="int-target" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Interaction Type</label>
+                        <select id="int-type">
+                            <option value="Phone Call">Phone Call</option>
+                            <option value="Email">Email (Simulated)</option>
+                            <option value="Meeting">Meeting</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date & Time *</label>
+                        <input type="datetime-local" id="int-datetime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject *</label>
+                        <input type="text" id="int-subject" required placeholder="Quarterly Pricing Discussion">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>Description / Notes</label>
+                    <textarea id="int-desc" rows="3" placeholder="Summary of discussion..."></textarea>
+                </div>
+                <div class="form-grid" style="margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Outcome</label>
+                        <input type="text" id="int-outcome" placeholder="Interested in Enterprise Tier">
+                    </div>
+                    <div class="form-group">
+                        <label>Follow-up Date</label>
+                        <input type="date" id="int-followup">
+                    </div>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeInteractionModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Interaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div id="user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add Demonstration User</h3>
+                <button type="button" class="modal-close" onclick="closeUserModal()">&times;</button>
+            </div>
+            <form id="user-form" onsubmit="saveUser(event)">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="u-name" required placeholder="Rohan Verma">
+                </div>
+                <div class="form-group">
+                    <label>Email Address *</label>
+                    <input type="email" id="u-email" required placeholder="rohan@nexus.com" onblur="validateEmailInput(this)">
+                    <span class="error-msg" id="u-email-err"></span>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="u-role">
+                        <option value="Admin">Admin</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Agent">Agent</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Account Status</label>
+                    <select id="u-status">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Profile / Details View Modal -->
+    <div id="customer-profile-modal" class="modal">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h3>Customer Profile & Timeline</h3>
+                <button type="button" class="modal-close" onclick="closeCustomerProfileModal()">&times;</button>
+            </div>
+            <div id="customer-profile-content" class="profile-content-body">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main Application JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
